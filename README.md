@@ -203,4 +203,4 @@ MIT License - siehe [LICENSE](LICENSE)
 
 - [SimChecklist.app](https://simchecklist.app) - Die Hauptanwendung
 - [SimFlyCorp](https://simchecklist.app/simflycorp/info) - Piloten-Karriere-System
-- [Discord](https://discord.gg/Kn5eXb9D) - Community & Support
+- [Discord](https://discord.gg/4YzfNCcU) - Community & Support
