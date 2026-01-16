@@ -3,8 +3,10 @@ bin/
 obj/
 publish/
 
-# Environment files (contain secrets)
-.env
+# Environment files with secrets (service keys, admin IDs)
+# Note: .env with public keys IS tracked
+.env.local
+.env.private
 
 # IDE
 .vs/
