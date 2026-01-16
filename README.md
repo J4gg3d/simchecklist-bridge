@@ -8,7 +8,6 @@ Die Bridge läuft **lokal auf deinem PC** und:
 
 1. **Liest Flugdaten aus MSFS 2024** via SimConnect (die offizielle Microsoft API)
 2. **Sendet diese Daten per WebSocket** an die SimChecklist-Website
-3. **Stellt einen lokalen HTTP-Server** für Tablet-Zugriff bereit
 
 ### Übertragene Daten
 
@@ -40,15 +39,13 @@ Die Bridge liest folgende Daten aus dem Simulator:
 │  (Simulator)    │                    │  (Diese App)    │
 └─────────────────┘                    └────────┬────────┘
                                                 │
-                           WebSocket (Port 8080)│
+                                                │ WebSocket (Port 8080)
                                                 │
-                    ┌───────────────────────────┼───────────────────────────┐
-                    │                           │                           │
-                    ▼                           ▼                           ▼
-           ┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
-           │  SimChecklist   │       │  Tablet/iPad    │       │  Andere Clients │
-           │  (Browser)      │       │  (HTTP :8081)   │       │  (WebSocket)    │
-           └─────────────────┘       └─────────────────┘       └─────────────────┘
+                                                ▼
+                                       ┌─────────────────┐
+                                       │  SimChecklist   │
+                                       │  (Browser)      │
+                                       └─────────────────┘
 ```
 
 ## Features
@@ -57,8 +54,7 @@ Die Bridge liest folgende Daten aus dem Simulator:
 - **Auto-Retry**: Versucht alle 5 Sekunden erneut, wenn MSFS nicht läuft
 - **Landing Detection**: Erkennt Landungen automatisch und bewertet sie (1-5 Sterne)
 - **Glidepath Recording**: Zeichnet die letzten 60 Sekunden des Anflugs auf
-- **Tablet Support**: HTTP-Server auf Port 8081 für Tablets im lokalen Netzwerk
-- **Route Sync**: Synchronisiert Flugrouten zwischen PC und Tablet
+- **Flight Logging**: Speichert Flüge automatisch wenn du bei SimFlyCorp eingeloggt bist
 - **Demo Mode**: Simulierte Daten wenn MSFS nicht läuft (zum Testen)
 
 ## Installation
@@ -100,14 +96,9 @@ cp .env.example .env
 # Dann die Werte in .env anpassen
 ```
 
-## Ports
+## Port
 
-| Port | Protokoll | Verwendung |
-|------|-----------|------------|
-| 8080 | WebSocket | Flugdaten-Stream |
-| 8081 | HTTP | Tablet-Webserver |
-
-Falls diese Ports blockiert sind, musst du sie in deiner Firewall freigeben.
+Die Bridge verwendet **Port 8080** für WebSocket-Verbindungen. Falls dieser Port blockiert ist, musst du ihn in deiner Firewall freigeben.
 
 ## WebSocket-Protokoll
 
@@ -175,12 +166,6 @@ Falls diese Ports blockiert sind, musst du sie in deiner Firewall freigeben.
 1. Die Bridge muss laufen
 2. Prüfe ob Port 8080 in der Firewall freigegeben ist
 3. Bei HTTPS-Websites: Die Bridge läuft auf localhost, was von Browsern als sicher behandelt wird
-
-### Tablet kann nicht verbinden
-
-1. PC und Tablet müssen im gleichen WLAN sein
-2. Port 8081 muss in der Windows-Firewall freigegeben sein
-3. Verwende die IP-Adresse des PCs (wird in der Bridge-Konsole angezeigt)
 
 ## Datenschutz
 
