@@ -92,17 +92,10 @@ Bei Auswahl von **[J]** wird das Update automatisch heruntergeladen, installiert
 
 ### Option B: Selbst kompilieren
 
-**Zusätzliche Voraussetzung:** [MSFS 2024 SDK](https://docs.flightsimulator.com/html/Introduction/SDK_Overview.htm) (für SimConnect DLLs)
-
 ```bash
 # Repository klonen
 git clone https://github.com/J4gg3d/simchecklist-bridge.git
 cd simchecklist-bridge
-
-# SimConnect DLLs kopieren (Pfad anpassen falls nötig)
-mkdir libs
-copy "C:\MSFS SDK\SimConnect SDK\lib\managed\Microsoft.FlightSimulator.SimConnect.dll" libs\
-copy "C:\MSFS SDK\SimConnect SDK\lib\SimConnect.dll" libs\
 
 # Bauen
 dotnet build
@@ -110,6 +103,8 @@ dotnet build
 # Starten
 dotnet run
 ```
+
+Die SimConnect DLLs sind bereits im `libs/` Ordner enthalten.
 
 ## Konfiguration
 
