@@ -52,10 +52,29 @@ Die Bridge liest folgende Daten aus dem Simulator:
 
 - **Auto-Connect**: Verbindet sich automatisch mit MSFS wenn es läuft
 - **Auto-Retry**: Versucht alle 5 Sekunden erneut, wenn MSFS nicht läuft
+- **Auto-Update**: Prüft beim Start auf neue Versionen und aktualisiert auf Knopfdruck
 - **Landing Detection**: Erkennt Landungen automatisch und bewertet sie (1-5 Sterne)
 - **Glidepath Recording**: Zeichnet die letzten 60 Sekunden des Anflugs auf
 - **Flight Logging**: Speichert Flüge automatisch wenn du bei SimFlyCorp eingeloggt bist
 - **Demo Mode**: Simulierte Daten wenn MSFS nicht läuft (zum Testen)
+
+## Auto-Update
+
+Die Bridge prüft beim Start automatisch ob eine neue Version verfügbar ist:
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║                    UPDATE VERFÜGBAR!                         ║
+╚══════════════════════════════════════════════════════════════╝
+  Aktuelle Version: 1.5.0
+  Neue Version:     v1.6.0
+
+  [J] Jetzt aktualisieren
+  [N] Später (Bridge normal starten)
+  [I] Im Browser öffnen
+```
+
+Bei Auswahl von **[J]** wird das Update automatisch heruntergeladen, installiert und die Bridge neu gestartet.
 
 ## Installation
 
@@ -73,10 +92,17 @@ Die Bridge liest folgende Daten aus dem Simulator:
 
 ### Option B: Selbst kompilieren
 
+**Zusätzliche Voraussetzung:** [MSFS 2024 SDK](https://docs.flightsimulator.com/html/Introduction/SDK_Overview.htm) (für SimConnect DLLs)
+
 ```bash
 # Repository klonen
 git clone https://github.com/J4gg3d/simchecklist-bridge.git
 cd simchecklist-bridge
+
+# SimConnect DLLs kopieren (Pfad anpassen falls nötig)
+mkdir libs
+copy "C:\MSFS SDK\SimConnect SDK\lib\managed\Microsoft.FlightSimulator.SimConnect.dll" libs\
+copy "C:\MSFS SDK\SimConnect SDK\lib\SimConnect.dll" libs\
 
 # Bauen
 dotnet build

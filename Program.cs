@@ -45,10 +45,14 @@ foreach (var envPath in envPaths)
 
 Console.WriteLine("╔══════════════════════════════════════════════════════════════╗");
 Console.WriteLine("║           MSFS Checklist - Bridge Server                     ║");
+Console.WriteLine($"║           Version {MSFSBridge.UpdateChecker.CURRENT_VERSION,-10}                                   ║");
 Console.WriteLine("║                                                              ║");
 Console.WriteLine("║  Verbindet Microsoft Flight Simulator mit der Checkliste     ║");
 Console.WriteLine("╚══════════════════════════════════════════════════════════════╝");
 Console.WriteLine();
+
+// Check for updates
+await MSFSBridge.UpdateChecker.CheckAndPromptForUpdateAsync();
 
 const int WEBSOCKET_PORT = 8080;
 const int HTTP_PORT = 8081;
