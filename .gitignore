@@ -1,0 +1,29 @@
+# Build outputs
+bin/
+obj/
+publish/
+
+# Environment files (contain secrets)
+.env
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Packages
+*.nupkg
+
+# Logs
+*.log
+
+# ZIP releases (build artifacts)
+*.zip
+
+# www folder (served frontend files, copy from main project)
+www/
