@@ -3,7 +3,7 @@ using DotNetEnv;
 using System.Net;
 using System.Net.Sockets;
 
-// Hilfsfunktion: Lokale IP-Adressen ermitteln
+// Helper function: Get local IP addresses
 static List<string> GetLocalIPAddresses()
 {
     var ips = new List<string>();
@@ -22,24 +22,24 @@ static List<string> GetLocalIPAddresses()
     return ips;
 }
 
-// .env Dateien laden (Bridge .env hat Priorität für Service Keys)
+// Load .env files (Bridge .env has priority for service keys)
 var envPaths = new[] {
-    // Bridge-spezifische .env (mit Service Key)
-    Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".env"),  // Bei dotnet run
-    Path.Combine(AppContext.BaseDirectory, ".env"),  // Bei Release-Build
-    // Root .env als Fallback
+    // Bridge-specific .env (with service key)
+    Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".env"),  // When using dotnet run
+    Path.Combine(AppContext.BaseDirectory, ".env"),  // For release build
+    // Root .env as fallback
     Path.Combine(Directory.GetCurrentDirectory(), ".env"),
     Path.Combine(Directory.GetCurrentDirectory(), "..", "..", ".env"),
     Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", ".env"),
 };
 
-// Alle gefundenen .env Dateien laden (spätere überschreiben frühere)
+// Load all found .env files (later ones override earlier ones)
 foreach (var envPath in envPaths)
 {
     if (File.Exists(envPath))
     {
         Env.Load(envPath);
-        Console.WriteLine($"[CONFIG] .env geladen: {Path.GetFullPath(envPath)}");
+        Console.WriteLine($"[CONFIG] .env loaded: {Path.GetFullPath(envPath)}");
     }
 }
 
@@ -47,14 +47,14 @@ Console.WriteLine("╔═══════════════════�
 Console.WriteLine("║           MSFS Checklist - Bridge Server                     ║");
 Console.WriteLine($"║           Version {MSFSBridge.UpdateChecker.CURRENT_VERSION,-10}                                   ║");
 Console.WriteLine("║                                                              ║");
-Console.WriteLine("║  Verbindet Microsoft Flight Simulator mit der Checkliste     ║");
+Console.WriteLine("║  Connects Microsoft Flight Simulator with the checklist      ║");
 Console.WriteLine("╚══════════════════════════════════════════════════════════════╝");
 Console.WriteLine();
 
 // Check for updates
 await MSFSBridge.UpdateChecker.CheckAndPromptForUpdateAsync();
 
-// Ports aus .env laden (mit Fallback auf Standard-Ports)
+// Load ports from .env (with fallback to default ports)
 var wsPortStr = Environment.GetEnvironmentVariable("WEBSOCKET_PORT");
 var httpPortStr = Environment.GetEnvironmentVariable("HTTP_PORT");
 
@@ -64,31 +64,31 @@ int HTTP_PORT = 8081;
 if (int.TryParse(wsPortStr, out var customWsPort))
 {
     WEBSOCKET_PORT = customWsPort;
-    Console.WriteLine($"[CONFIG] WebSocket-Port aus .env: {WEBSOCKET_PORT}");
+    Console.WriteLine($"[CONFIG] WebSocket port from .env: {WEBSOCKET_PORT}");
 }
 if (int.TryParse(httpPortStr, out var customHttpPort))
 {
     HTTP_PORT = customHttpPort;
-    Console.WriteLine($"[CONFIG] HTTP-Port aus .env: {HTTP_PORT}");
+    Console.WriteLine($"[CONFIG] HTTP port from .env: {HTTP_PORT}");
 }
 
-// WWW-Ordner für statische Dateien (Website)
+// WWW folder for static files (website)
 var wwwRoot = Path.Combine(AppContext.BaseDirectory, "www");
 
-// Statischen Webserver starten (für Tablets)
+// Start static web server (for tablets)
 using var staticServer = new StaticFileServer(wwwRoot);
 staticServer.OnLog += (message) => Console.WriteLine($"[HTTP] {message}");
 staticServer.Start(HTTP_PORT);
 string? sessionCode = null;
 
-// WebSocket-Server erstellen und starten
+// Create and start WebSocket server
 using var webSocketServer = new BridgeWebSocketServer();
 webSocketServer.OnLog += (message) => Console.WriteLine($"[WS] {message}");
 
-// Speichert den Session-Code für neue Client-Verbindungen
+// Store session code for new client connections
 string? activeSessionCode = null;
 
-// Bei neuer Client-Verbindung sofort Session-Code senden
+// Send session code immediately when new client connects
 webSocketServer.OnClientConnected += (client) =>
 {
     if (!string.IsNullOrEmpty(activeSessionCode))
@@ -99,7 +99,7 @@ webSocketServer.OnClientConnected += (client) =>
             SessionCode = activeSessionCode
         };
         webSocketServer.SendToClient(client, welcomeData);
-        Console.WriteLine($"[WS] Session-Code an neuen Client gesendet: {activeSessionCode}");
+        Console.WriteLine($"[WS] Session code sent to new client: {activeSessionCode}");
     }
 };
 
@@ -109,54 +109,54 @@ try
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"[FEHLER] WebSocket-Server konnte nicht gestartet werden: {ex.Message}");
-    Console.WriteLine("         Möglicherweise ist Port 8080 bereits belegt.");
+    Console.WriteLine($"[ERROR] WebSocket server could not be started: {ex.Message}");
+    Console.WriteLine($"        Port {WEBSOCKET_PORT} may already be in use.");
     Console.WriteLine();
-    Console.WriteLine("Drücke eine Taste zum Beenden...");
+    Console.WriteLine("Press any key to exit...");
     Console.ReadKey();
     return;
 }
 
-// Supabase Session-Manager erstellen (optional)
+// Create Supabase session manager (optional)
 using var supabaseSession = new SupabaseSessionManager();
 supabaseSession.OnLog += (message) => Console.WriteLine($"[SESSION] {message}");
-supabaseSession.OnError += (error) => Console.WriteLine($"[SESSION FEHLER] {error}");
+supabaseSession.OnError += (error) => Console.WriteLine($"[SESSION ERROR] {error}");
 
-// Session starten wenn Supabase konfiguriert ist
+// Start session if Supabase is configured
 if (SupabaseSessionManager.IsConfigured())
 {
     Console.WriteLine();
-    Console.WriteLine("[SESSION] Supabase konfiguriert - starte Remote-Session...");
+    Console.WriteLine("[SESSION] Supabase configured - starting remote session...");
     sessionCode = await supabaseSession.StartSessionAsync();
-    activeSessionCode = sessionCode; // Für neue Client-Verbindungen speichern
+    activeSessionCode = sessionCode; // Store for new client connections
 
     if (sessionCode != null)
     {
         Console.WriteLine();
         Console.WriteLine("╔══════════════════════════════════════════════════════════════╗");
-        Console.WriteLine("║                    REMOTE SESSION AKTIV                      ║");
+        Console.WriteLine("║                    REMOTE SESSION ACTIVE                     ║");
         Console.WriteLine("╠══════════════════════════════════════════════════════════════╣");
         Console.WriteLine($"║                                                              ║");
-        Console.WriteLine($"║     Session-Code:   {sessionCode}                         ║");
+        Console.WriteLine($"║     Session Code:   {sessionCode}                         ║");
         Console.WriteLine($"║                                                              ║");
-        Console.WriteLine("║  Gib diesen Code auf deinem Tablet/Handy ein, um             ║");
-        Console.WriteLine("║  Live-Flugdaten zu empfangen.                                ║");
+        Console.WriteLine("║  Enter this code on your tablet/phone to receive             ║");
+        Console.WriteLine("║  live flight data.                                           ║");
         Console.WriteLine("╚══════════════════════════════════════════════════════════════╝");
         Console.WriteLine();
     }
 }
 else
 {
-    // Zeige lokale Netzwerk-Info für Tablet-Zugriff
+    // Show local network info for tablet access
     var localIPs = GetLocalIPAddresses();
     Console.WriteLine();
     Console.WriteLine("╔══════════════════════════════════════════════════════════════╗");
-    Console.WriteLine("║                  TABLET-ZUGRIFF (LOKALES NETZWERK)           ║");
+    Console.WriteLine("║                  TABLET ACCESS (LOCAL NETWORK)               ║");
     Console.WriteLine("╠══════════════════════════════════════════════════════════════╣");
     Console.WriteLine("║                                                              ║");
     if (localIPs.Count > 0)
     {
-        Console.WriteLine("║  Oeffne diese Adresse im Browser deines Tablets:             ║");
+        Console.WriteLine("║  Open this address in your tablet's browser:                 ║");
         Console.WriteLine("║                                                              ║");
         foreach (var ip in localIPs)
         {
@@ -164,67 +164,67 @@ else
             Console.WriteLine($"║     {urlDisplay}                   ║");
         }
         Console.WriteLine("║                                                              ║");
-        Console.WriteLine("║  Oder auf diesem PC:                                         ║");
+        Console.WriteLine("║  Or on this PC:                                              ║");
         Console.WriteLine($"║     http://localhost:{HTTP_PORT}                                    ║");
     }
     else
     {
-        Console.WriteLine("║  Keine Netzwerk-Verbindung gefunden.                         ║");
+        Console.WriteLine("║  No network connection found.                                ║");
         Console.WriteLine("║                                                              ║");
-        Console.WriteLine("║  Lokaler Zugriff:                                            ║");
+        Console.WriteLine("║  Local access:                                               ║");
         Console.WriteLine($"║     http://localhost:{HTTP_PORT}                                    ║");
     }
     Console.WriteLine("║                                                              ║");
-    Console.WriteLine("║  Tablet und PC muessen im gleichen WLAN sein!                ║");
+    Console.WriteLine("║  Tablet and PC must be on the same WiFi network!             ║");
     Console.WriteLine("╚══════════════════════════════════════════════════════════════╝");
     Console.WriteLine();
 }
 
-// SimConnect-Manager erstellen
+// Create SimConnect manager
 using var simConnect = new SimConnectManager();
 
-// Supabase Client für Flight-Logging erstellen
+// Create Supabase client for flight logging
 using var supabaseClient = new SupabaseClient();
 supabaseClient.OnLog += (message) => Console.WriteLine($"[FLIGHT-LOG] {message}");
-supabaseClient.OnError += (error) => Console.WriteLine($"[FLIGHT-LOG FEHLER] {error}");
+supabaseClient.OnError += (error) => Console.WriteLine($"[FLIGHT-LOG ERROR] {error}");
 
 if (supabaseClient.IsConfigured)
 {
-    Console.WriteLine("[FLIGHT-LOG] Supabase konfiguriert - Flüge werden gespeichert");
+    Console.WriteLine("[FLIGHT-LOG] Supabase configured - flights will be saved");
 }
 
-// Session-Code für Flight-Logging setzen (für anonyme Flüge)
+// Set session code for flight logging (for anonymous flights)
 if (!string.IsNullOrEmpty(activeSessionCode))
 {
     simConnect.SetSessionCode(activeSessionCode);
 }
 
-// User-Authentifizierung vom Frontend empfangen
+// Receive user authentication from frontend
 string? currentUserId = null;
 webSocketServer.OnUserAuthenticated += (userId, accessToken) =>
 {
     currentUserId = userId;
     simConnect.SetUserId(userId);
     supabaseClient.SetUserToken(accessToken);
-    Console.WriteLine($"[AUTH] User-ID gesetzt: {(string.IsNullOrEmpty(userId) ? "(keiner)" : userId)}");
+    Console.WriteLine($"[AUTH] User ID set: {(string.IsNullOrEmpty(userId) ? "(none)" : userId)}");
 };
 
-// Route vom Frontend empfangen (für FlightTracker)
+// Receive route from frontend (for FlightTracker)
 webSocketServer.OnRouteReceived += (origin, destination) =>
 {
     simConnect.SetRoute(origin, destination);
 };
 
 simConnect.OnStatusChanged += (status) => Console.WriteLine($"[SIM] {status}");
-simConnect.OnError += (error) => Console.WriteLine($"[SIM FEHLER] {error}");
+simConnect.OnError += (error) => Console.WriteLine($"[SIM ERROR] {error}");
 simConnect.OnLandingDetected += (landing) =>
 {
-    // Landing an alle Clients broadcasten
+    // Broadcast landing to all clients
     webSocketServer.BroadcastLanding(landing);
 };
 simConnect.OnFlightCompleted += async (flight) =>
 {
-    // Flug in Supabase speichern
+    // Save flight to Supabase
     if (supabaseClient.IsConfigured)
     {
         await supabaseClient.SaveFlightAsync(flight);
@@ -232,87 +232,87 @@ simConnect.OnFlightCompleted += async (flight) =>
 };
 simConnect.OnDataReceived += async (data) =>
 {
-    // Session-Code hinzufügen wenn aktiv
+    // Add session code if active
     if (supabaseSession.IsConnected && supabaseSession.SessionCode != null)
     {
         data.SessionCode = supabaseSession.SessionCode;
     }
 
-    // Daten an alle verbundenen WebSocket-Clients senden
+    // Send data to all connected WebSocket clients
     webSocketServer.BroadcastSimData(data);
 
-    // Auch an Remote-Session senden (wenn aktiv)
+    // Also send to remote session (if active)
     if (supabaseSession.IsConnected)
     {
         await supabaseSession.BroadcastSimDataAsync(data);
     }
 };
 
-// Admin User-ID für Test-Funktionen (aus .env)
+// Admin user ID for test functions (from .env)
 var adminUserId = Environment.GetEnvironmentVariable("ADMIN_USER_ID");
 bool isAdminConfigured = !string.IsNullOrEmpty(adminUserId);
 
 Console.WriteLine();
-Console.WriteLine($"WebSocket-Server: ws://localhost:{WEBSOCKET_PORT}");
-Console.WriteLine($"HTTP-Server:      http://localhost:{HTTP_PORT}");
+Console.WriteLine($"WebSocket Server: ws://localhost:{WEBSOCKET_PORT}");
+Console.WriteLine($"HTTP Server:      http://localhost:{HTTP_PORT}");
 if (isAdminConfigured)
 {
-    Console.WriteLine($"Admin-ID:         {adminUserId?.Substring(0, 8)}... (konfiguriert)");
+    Console.WriteLine($"Admin ID:         {adminUserId?.Substring(0, 8)}... (configured)");
 }
 Console.WriteLine();
-Console.WriteLine("Befehle:");
-Console.WriteLine("  [C] Verbinden mit MSFS (manuell)");
-Console.WriteLine("  [D] Trennen von MSFS");
-Console.WriteLine("  [R] Auto-Retry aktivieren");
-Console.WriteLine("  [S] Status anzeigen");
+Console.WriteLine("Commands:");
+Console.WriteLine("  [C] Connect to MSFS (manual)");
+Console.WriteLine("  [D] Disconnect from MSFS");
+Console.WriteLine("  [R] Enable auto-retry");
+Console.WriteLine("  [S] Show status");
 if (isAdminConfigured)
 {
-    Console.WriteLine("  [T] Test-Flug erstellen (nur Admin)");
+    Console.WriteLine("  [T] Create test flight (admin only)");
 }
-Console.WriteLine("  [Q] Beenden");
+Console.WriteLine("  [Q] Quit");
 Console.WriteLine();
 
-// Auto-Connect Konfiguration
-const int AUTO_RETRY_INTERVAL_MS = 5000; // Alle 5 Sekunden versuchen
+// Auto-connect configuration
+const int AUTO_RETRY_INTERVAL_MS = 5000; // Retry every 5 seconds
 bool autoRetryEnabled = true;
 DateTime lastRetryTime = DateTime.MinValue;
 
-// Automatischer Verbindungsversuch beim Start
-Console.WriteLine("[AUTO] Versuche automatisch mit MSFS zu verbinden...");
+// Automatic connection attempt at startup
+Console.WriteLine("[AUTO] Attempting to connect to MSFS automatically...");
 if (!simConnect.Connect())
 {
-    Console.WriteLine($"[AUTO] MSFS nicht gefunden. Automatischer Retry alle {AUTO_RETRY_INTERVAL_MS / 1000} Sekunden...");
-    Console.WriteLine("       Starte MSFS und die Verbindung wird automatisch hergestellt.");
+    Console.WriteLine($"[AUTO] MSFS not found. Auto-retry every {AUTO_RETRY_INTERVAL_MS / 1000} seconds...");
+    Console.WriteLine("       Start MSFS and the connection will be established automatically.");
     Console.WriteLine();
 }
 else
 {
-    autoRetryEnabled = false; // Keine Retries mehr nötig wenn verbunden
+    autoRetryEnabled = false; // No more retries needed when connected
 }
 
-// Hauptschleife
+// Main loop
 bool running = true;
 while (running)
 {
-    // Auto-Retry Logik: Wenn nicht verbunden und Auto-Retry aktiviert
+    // Auto-retry logic: If not connected and auto-retry enabled
     if (autoRetryEnabled && !simConnect.IsConnected)
     {
         if ((DateTime.Now - lastRetryTime).TotalMilliseconds >= AUTO_RETRY_INTERVAL_MS)
         {
             lastRetryTime = DateTime.Now;
-            Console.WriteLine("[AUTO] Verbindungsversuch...");
+            Console.WriteLine("[AUTO] Connection attempt...");
             if (simConnect.Connect())
             {
-                Console.WriteLine("[AUTO] Erfolgreich mit MSFS verbunden!");
+                Console.WriteLine("[AUTO] Successfully connected to MSFS!");
                 autoRetryEnabled = false;
             }
         }
     }
 
-    // Wenn Verbindung verloren geht, Auto-Retry wieder aktivieren
+    // If connection is lost, re-enable auto-retry
     if (!autoRetryEnabled && !simConnect.IsConnected)
     {
-        Console.WriteLine("[AUTO] Verbindung verloren. Aktiviere Auto-Retry...");
+        Console.WriteLine("[AUTO] Connection lost. Enabling auto-retry...");
         autoRetryEnabled = true;
         lastRetryTime = DateTime.Now;
     }
@@ -326,7 +326,7 @@ while (running)
             case ConsoleKey.C:
                 if (!simConnect.IsConnected)
                 {
-                    Console.WriteLine("\nVerbinde mit MSFS...");
+                    Console.WriteLine("\nConnecting to MSFS...");
                     if (simConnect.Connect())
                     {
                         autoRetryEnabled = false;
@@ -334,21 +334,21 @@ while (running)
                 }
                 else
                 {
-                    Console.WriteLine("\nBereits verbunden.");
+                    Console.WriteLine("\nAlready connected.");
                 }
                 break;
 
             case ConsoleKey.D:
                 if (simConnect.IsConnected)
                 {
-                    Console.WriteLine("\nTrenne Verbindung...");
+                    Console.WriteLine("\nDisconnecting...");
                     simConnect.Disconnect();
-                    autoRetryEnabled = false; // Manuell getrennt, kein Auto-Retry
-                    Console.WriteLine("Auto-Retry deaktiviert. Drücke [C] zum manuellen Verbinden oder [R] für Auto-Retry.");
+                    autoRetryEnabled = false; // Manually disconnected, no auto-retry
+                    Console.WriteLine("Auto-retry disabled. Press [C] to connect manually or [R] for auto-retry.");
                 }
                 else
                 {
-                    Console.WriteLine("\nNicht verbunden.");
+                    Console.WriteLine("\nNot connected.");
                 }
                 break;
 
@@ -356,49 +356,49 @@ while (running)
                 if (!autoRetryEnabled)
                 {
                     autoRetryEnabled = true;
-                    lastRetryTime = DateTime.MinValue; // Sofort versuchen
-                    Console.WriteLine("\nAuto-Retry aktiviert.");
+                    lastRetryTime = DateTime.MinValue; // Try immediately
+                    Console.WriteLine("\nAuto-retry enabled.");
                 }
                 else
                 {
-                    Console.WriteLine("\nAuto-Retry ist bereits aktiv.");
+                    Console.WriteLine("\nAuto-retry is already active.");
                 }
                 break;
 
             case ConsoleKey.S:
                 Console.WriteLine();
                 Console.WriteLine("=== STATUS ===");
-                Console.WriteLine($"  SimConnect: {(simConnect.IsConnected ? "Verbunden" : "Nicht verbunden")}");
-                Console.WriteLine($"  Auto-Retry: {(autoRetryEnabled ? "Aktiv" : "Deaktiviert")}");
+                Console.WriteLine($"  SimConnect: {(simConnect.IsConnected ? "Connected" : "Not connected")}");
+                Console.WriteLine($"  Auto-Retry: {(autoRetryEnabled ? "Active" : "Disabled")}");
                 Console.WriteLine($"  WebSocket Clients: {webSocketServer.ClientCount}");
-                Console.WriteLine($"  HTTP-Server: Port {HTTP_PORT}");
-                Console.WriteLine($"  Remote Session: {(supabaseSession.IsConnected ? $"Aktiv ({supabaseSession.SessionCode})" : "Nicht aktiv")}");
+                Console.WriteLine($"  HTTP Server: Port {HTTP_PORT}");
+                Console.WriteLine($"  Remote Session: {(supabaseSession.IsConnected ? $"Active ({supabaseSession.SessionCode})" : "Not active")}");
                 Console.WriteLine("==============");
                 break;
 
             case ConsoleKey.T:
-                // Admin-only Test-Funktion
+                // Admin-only test function
                 if (!isAdminConfigured)
                 {
-                    Console.WriteLine("\n[TEST] Admin-ID nicht konfiguriert! Setze ADMIN_USER_ID in .env");
+                    Console.WriteLine("\n[TEST] Admin ID not configured! Set ADMIN_USER_ID in .env");
                 }
                 else if (string.IsNullOrEmpty(currentUserId))
                 {
-                    Console.WriteLine("\n[TEST] Kein User eingeloggt! Bitte zuerst auf der Website einloggen.");
+                    Console.WriteLine("\n[TEST] No user logged in! Please log in on the website first.");
                 }
                 else if (currentUserId != adminUserId)
                 {
-                    Console.WriteLine("\n[TEST] Zugriff verweigert! Nur der Admin kann Test-Flüge erstellen.");
-                    Console.WriteLine($"       Eingeloggt: {currentUserId.Substring(0, 8)}...");
-                    Console.WriteLine($"       Admin:      {adminUserId?.Substring(0, 8)}...");
+                    Console.WriteLine("\n[TEST] Access denied! Only the admin can create test flights.");
+                    Console.WriteLine($"       Logged in: {currentUserId.Substring(0, 8)}...");
+                    Console.WriteLine($"       Admin:     {adminUserId?.Substring(0, 8)}...");
                 }
                 else if (!supabaseClient.IsConfigured)
                 {
-                    Console.WriteLine("\n[TEST] Supabase nicht konfiguriert!");
+                    Console.WriteLine("\n[TEST] Supabase not configured!");
                 }
                 else
                 {
-                    Console.WriteLine("\n[TEST] Admin verifiziert - erstelle Test-Flug...");
+                    Console.WriteLine("\n[TEST] Admin verified - creating test flight...");
                     var random = new Random();
                     var airports = new[] { "EDDF", "KJFK", "EGLL", "LFPG", "KLAX", "KEWR", "KORD", "LEMD", "LIRF", "EHAM" };
                     var aircraft = new[] { "Airbus A330-200", "Boeing 737 MAX 8", "Pilatus PC-12 NGX" };
@@ -411,7 +411,7 @@ while (running)
                         AircraftType = aircraft[random.Next(aircraft.Length)],
                         DepartureTime = DateTime.UtcNow.AddMinutes(-random.Next(30, 180)),
                         ArrivalTime = DateTime.UtcNow,
-                        FlightDurationSeconds = random.Next(1800, 10800), // 30 min bis 3 Stunden
+                        FlightDurationSeconds = random.Next(1800, 10800), // 30 min to 3 hours
                         DistanceNm = random.Next(100, 3000),
                         MaxAltitudeFt = random.Next(10000, 41000),
                         LandingRating = random.Next(1, 6),
@@ -419,7 +419,7 @@ while (running)
                         LandingGforce = 1.0 + random.NextDouble() * 0.5
                     };
 
-                    // Score berechnen
+                    // Calculate score
                     testFlight.CalculateScore();
 
                     Console.WriteLine($"[TEST] {testFlight.Origin} -> {testFlight.Destination}, {testFlight.DistanceNm} NM, Score: {testFlight.Score}");
@@ -428,14 +428,14 @@ while (running)
                         var success = await supabaseClient.SaveFlightAsync(testFlight);
                         if (success)
                         {
-                            Console.WriteLine("[TEST] Test-Flug erfolgreich gespeichert!");
+                            Console.WriteLine("[TEST] Test flight saved successfully!");
                         }
                     });
                 }
                 break;
 
             case ConsoleKey.Q:
-                Console.WriteLine("\nBeende...");
+                Console.WriteLine("\nShutting down...");
                 running = false;
                 break;
         }
@@ -444,9 +444,9 @@ while (running)
     Thread.Sleep(50);
 }
 
-// Aufräumen
+// Cleanup
 simConnect.Disconnect();
 webSocketServer.Stop();
 await supabaseSession.StopSessionAsync();
 
-Console.WriteLine("Bridge-Server beendet.");
+Console.WriteLine("Bridge server stopped.");

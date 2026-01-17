@@ -1,42 +1,42 @@
-# SimChecklist Bridge
+# MSFSBridge
 
-Eine lokale Bridge-Anwendung, die Microsoft Flight Simulator 2024 mit [SimChecklist.app](https://simchecklist.app) verbindet.
+**[Deutsch](README.de.md)** | English
 
-## Was macht die Bridge?
+Bridge server that connects Microsoft Flight Simulator 2024 with [SimChecklist](https://simchecklist.app).
 
-Die Bridge läuft **lokal auf deinem PC** und:
+## What does the Bridge do?
 
-1. **Liest Flugdaten aus MSFS 2024** via SimConnect (die offizielle Microsoft API)
-2. **Sendet diese Daten per WebSocket** an die SimChecklist-Website
+The Bridge runs **locally on your PC** and:
 
-### Übertragene Daten
+1. **Reads flight data from MSFS 2024** via SimConnect (the official Microsoft API)
+2. **Sends this data via WebSocket** to the SimChecklist website
 
-Die Bridge liest folgende Daten aus dem Simulator:
+### Transmitted Data
 
-| Kategorie | Daten |
-|-----------|-------|
+| Category | Data |
+|----------|------|
 | **Position** | Latitude, Longitude, Altitude, Ground Altitude |
-| **Geschwindigkeit** | Ground Speed, Vertical Speed, Airspeed |
+| **Speed** | Ground Speed, Vertical Speed, Airspeed |
 | **Attitude** | Pitch, Bank, Heading, Angle of Attack |
-| **G-Kräfte** | Vertical G, Lateral G, Longitudinal G |
+| **G-Forces** | Vertical G, Lateral G, Longitudinal G |
 | **Status** | On Ground, Gear Position, Flaps, Engines Running |
-| **Systeme** | Lights, Electrical, APU, Anti-Ice, Transponder |
+| **Systems** | Lights, Electrical, APU, Anti-Ice, Transponder |
 | **ATC** | Callsign, Airline, Flight Number |
-| **GPS/Flugplan** | Waypoints, Destination, ETE |
+| **GPS/Flight Plan** | Waypoints, Destination, ETE |
 
-### Was wird NICHT übertragen?
+### What is NOT transmitted?
 
-- Keine persönlichen Daten von deinem PC
-- Keine Dateien außerhalb von MSFS
-- Keine Screenshots oder Bildschirminhalte
-- Keine Tastatureingaben
+- No personal data from your PC
+- No files outside of MSFS
+- No screenshots or screen contents
+- No keyboard inputs
 
-## Architektur
+## Architecture
 
 ```
 ┌─────────────────┐     SimConnect     ┌─────────────────┐
 │  MSFS 2024      │◄──────────────────►│  Bridge         │
-│  (Simulator)    │                    │  (Diese App)    │
+│  (Simulator)    │                    │  (This App)     │
 └─────────────────┘                    └────────┬────────┘
                                                 │
                                                 │ WebSocket (Port 8080)
@@ -50,157 +50,141 @@ Die Bridge liest folgende Daten aus dem Simulator:
 
 ## Features
 
-- **Auto-Connect**: Verbindet sich automatisch mit MSFS wenn es läuft
-- **Auto-Retry**: Versucht alle 5 Sekunden erneut, wenn MSFS nicht läuft
-- **Auto-Update**: Prüft beim Start auf neue Versionen und aktualisiert auf Knopfdruck
-- **Landing Detection**: Erkennt Landungen automatisch und bewertet sie (1-5 Sterne)
-- **Glidepath Recording**: Zeichnet die letzten 60 Sekunden des Anflugs auf
-- **Flight Logging**: Speichert Flüge automatisch wenn du bei SimFlyCorp eingeloggt bist
-- **Demo Mode**: Simulierte Daten wenn MSFS nicht läuft (zum Testen)
+- **Auto-Connect**: Automatically connects to MSFS when running
+- **Auto-Retry**: Retries every 5 seconds if MSFS is not running
+- **Auto-Update**: Checks for new versions on startup and updates with one click
+- **Landing Detection**: Automatically detects and rates landings (1-5 stars)
+- **Glidepath Recording**: Records the last 60 seconds of approach
+- **Flight Logging**: Saves flights automatically when logged in to SimFlyCorp
+- **Demo Mode**: Simulated data when MSFS is not running (for testing)
 
-## Auto-Update
+## Download
 
-Die Bridge prüft beim Start automatisch ob eine neue Version verfügbar ist:
+Download the latest version from [Releases](https://github.com/J4gg3d/simchecklist-bridge/releases).
 
-```
-╔══════════════════════════════════════════════════════════════╗
-║                    UPDATE VERFÜGBAR!                         ║
-╚══════════════════════════════════════════════════════════════╝
-  Aktuelle Version: 1.5.0
-  Neue Version:     v1.6.0
+## Quick Start
 
-  [J] Jetzt aktualisieren
-  [N] Später (Bridge normal starten)
-  [I] Im Browser öffnen
-```
+1. Download and extract `MSFSBridge-vX.X.X.zip`
+2. Run `MSFSBridge.exe`
+3. Open https://simchecklist.app in your browser
+4. The website automatically connects to the Bridge
 
-Bei Auswahl von **[J]** wird das Update automatisch heruntergeladen, installiert und die Bridge neu gestartet.
+## Configuration
 
-## Installation
+Create a `.env` file in the same folder as `MSFSBridge.exe` for optional configuration:
 
-### Voraussetzungen
-
-- Windows 10/11
-- [.NET 8 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) (nicht SDK, nur Runtime)
-- Microsoft Flight Simulator 2024
-
-### Option A: Fertige Release nutzen
-
-1. Lade die neueste Release von der [Releases-Seite](https://github.com/J4gg3d/simchecklist-bridge/releases) herunter
-2. Entpacke die ZIP-Datei
-3. Starte `MSFSBridge.exe` oder `start-bridge.bat`
-
-### Option B: Selbst kompilieren
-
-```bash
-# Repository klonen
-git clone https://github.com/J4gg3d/simchecklist-bridge.git
-cd simchecklist-bridge
-
-# Bauen
-dotnet build
-
-# Starten
-dotnet run
+```env
+# Custom ports (if default ports are blocked)
+WEBSOCKET_PORT=8090
+HTTP_PORT=8091
 ```
 
-Die SimConnect DLLs sind bereits im `libs/` Ordner enthalten.
+### Port Configuration
 
-## Konfiguration
+The default ports are:
+- **WebSocket**: 8080
+- **HTTP** (for tablets): 8081
 
-Die Bridge funktioniert ohne Konfiguration für die Grundfunktionen.
+If port 8080 is blocked (common with Hyper-V or Docker), set a custom port in `.env` and configure the same port in the website settings.
 
-Für erweiterte Features (Flight-Logging zu SimFlyCorp) erstelle eine `.env` Datei:
+## Tablet Access
 
-```bash
-cp .env.example .env
-# Dann die Werte in .env anpassen
-```
+### Option A: Via simchecklist.app (Recommended)
+1. Open https://simchecklist.app on your PC
+2. Run the Bridge
+3. Website connects automatically
 
-## Port
+### Option B: Local Network (for tablets)
+1. Run the Bridge on your PC
+2. Note the URL shown in the console (e.g., `http://192.168.1.100:8081`)
+3. Open this URL on your tablet
+4. PC and tablet must be on the same WiFi network
 
-Die Bridge verwendet **Port 8080** für WebSocket-Verbindungen. Falls dieser Port blockiert ist, musst du ihn in deiner Firewall freigeben.
+**Note**: The HTTP server for tablets requires a `www` folder with website files. Without it, use https://simchecklist.app directly.
 
-## WebSocket-Protokoll
+## Commands
 
-### Vom Client zur Bridge
+While the Bridge is running:
 
-```json
-{ "type": "route", "data": { "origin": "EDDF", "destination": "KJFK" } }
-{ "type": "getAirport", "data": "EDDF" }
-{ "type": "ping" }
-```
-
-### Von der Bridge zum Client
-
-```json
-// Flugdaten (werden kontinuierlich gesendet)
-{
-  "altitude": 35000,
-  "groundSpeed": 450,
-  "heading": 270,
-  "latitude": 50.0379,
-  "longitude": 8.5622,
-  "verticalSpeed": 0,
-  "onGround": false,
-  // ... weitere Felder
-}
-
-// Landing-Event
-{
-  "type": "landing",
-  "landing": {
-    "verticalSpeed": -150,
-    "gForce": 1.2,
-    "rating": "Good",
-    "ratingScore": 4
-  }
-}
-
-// Route-Sync
-{ "type": "route", "route": { "origin": "EDDF", "destination": "KJFK" } }
-
-// Flughafen-Koordinaten
-{ "type": "airportCoords", "icao": "EDDF", "coords": { "lat": 50.0379, "lon": 8.5622 } }
-```
+| Key | Action |
+|-----|--------|
+| `C` | Connect to MSFS (manual) |
+| `D` | Disconnect from MSFS |
+| `R` | Enable auto-retry |
+| `S` | Show status |
+| `Q` | Quit |
 
 ## Landing Rating System
 
-| Rating | Sinkrate | Sterne |
-|--------|----------|--------|
+| Rating | Vertical Speed | Stars |
+|--------|----------------|-------|
 | Perfect | < 100 ft/min | ★★★★★ |
 | Good | 100-200 ft/min | ★★★★☆ |
 | Acceptable | 200-300 ft/min | ★★★☆☆ |
 | Hard | 300-500 ft/min | ★★☆☆☆ |
 | Very Hard | > 500 ft/min | ★☆☆☆☆ |
 
+## Firewall
+
+If the Bridge can't connect, you may need to allow it through Windows Firewall:
+
+1. Open Windows Firewall settings
+2. Click "Allow an app through firewall"
+3. Add `MSFSBridge.exe`
+4. Enable for Private networks
+
+## Requirements
+
+- Windows 10/11
+- Microsoft Flight Simulator 2024
+- .NET 8.0 Runtime (included in Windows 11)
+
+## Building from Source
+
+```bash
+# Clone repository
+git clone https://github.com/J4gg3d/simchecklist-bridge.git
+cd simchecklist-bridge
+
+# Build
+dotnet build
+
+# Run
+dotnet run
+```
+
+SimConnect DLLs are included in the `libs/` folder.
+
 ## Troubleshooting
 
-### Bridge verbindet nicht mit MSFS
+### Bridge doesn't connect to MSFS
+1. Make sure MSFS 2024 is running (not just the launcher)
+2. Restart the Bridge
+3. Check if .NET 8 Runtime is installed
 
-1. Stelle sicher, dass MSFS 2024 läuft (nicht nur der Launcher)
-2. Starte die Bridge neu
-3. Prüfe ob .NET 8 Runtime installiert ist
+### "Port already in use"
+Another application is using port 8080. Either:
+- Close the other application
+- Set a custom port in `.env`
 
-### Website zeigt "Nicht verbunden"
+### Website shows "Not connected"
+1. Make sure the Bridge is running
+2. Check if port 8080 is allowed in the firewall
+3. If using a custom port, make sure it matches in website settings
 
-1. Die Bridge muss laufen
-2. Prüfe ob Port 8080 in der Firewall freigegeben ist
-3. Bei HTTPS-Websites: Die Bridge läuft auf localhost, was von Browsern als sicher behandelt wird
+## Privacy
 
-## Datenschutz
+- All data stays in your local network
+- The Bridge doesn't send data to external servers (except optionally to SimFlyCorp if enabled)
+- No tracking cookies, no analytics
+- Source code is fully visible
 
-- Alle Daten bleiben in deinem lokalen Netzwerk
-- Die Bridge sendet keine Daten an externe Server (außer optional an SimFlyCorp wenn aktiviert)
-- Keine Tracking-Cookies, keine Analytics
-- Der Quellcode ist vollständig einsehbar
+## License
 
-## Lizenz
-
-MIT License - siehe [LICENSE](LICENSE)
+MIT License - see [LICENSE](LICENSE)
 
 ## Links
 
-- [SimChecklist.app](https://simchecklist.app) - Die Hauptanwendung
-- [SimFlyCorp](https://simchecklist.app/simflycorp/info) - Piloten-Karriere-System
+- [SimChecklist.app](https://simchecklist.app) - The main application
+- [SimFlyCorp](https://simchecklist.app/simflycorp/info) - Pilot career system
 - [Discord](https://discord.gg/4YzfNCcU) - Community & Support

@@ -4,7 +4,7 @@ using System.Text;
 namespace MSFSBridge;
 
 /// <summary>
-/// Einfacher HTTP-Server für statische Dateien (Website für Tablets)
+/// Simple HTTP server for static files (website for tablets)
 /// </summary>
 public class StaticFileServer : IDisposable
 {
@@ -16,7 +16,7 @@ public class StaticFileServer : IDisposable
 
     public event Action<string>? OnLog;
 
-    // MIME-Types für gängige Dateien
+    // MIME types for common files
     private static readonly Dictionary<string, string> MimeTypes = new()
     {
         { ".html", "text/html; charset=utf-8" },
@@ -42,14 +42,14 @@ public class StaticFileServer : IDisposable
     }
 
     /// <summary>
-    /// Startet den HTTP-Server
+    /// Starts the HTTP server
     /// </summary>
     public void Start(int port = 8081)
     {
         if (!Directory.Exists(_wwwRoot))
         {
-            OnLog?.Invoke($"Kein www-Ordner gefunden - HTTP-Server für Tablets deaktiviert");
-            OnLog?.Invoke("(Nutze https://simchecklist.app im Browser stattdessen)");
+            OnLog?.Invoke($"No www folder found - HTTP server for tablets disabled");
+            OnLog?.Invoke("(Use https://simchecklist.app in your browser instead)");
             return;
         }
 
@@ -67,13 +67,13 @@ public class StaticFileServer : IDisposable
             };
             _listenerThread.Start();
 
-            OnLog?.Invoke($"HTTP-Server gestartet auf Port {port}");
-            OnLog?.Invoke($"WWW-Root: {_wwwRoot}");
+            OnLog?.Invoke($"HTTP server started on port {port}");
+            OnLog?.Invoke($"WWW root: {_wwwRoot}");
         }
         catch (HttpListenerException ex) when (ex.ErrorCode == 5)
         {
-            // Access denied - versuche ohne + (nur localhost)
-            OnLog?.Invoke("Admin-Rechte fehlen für Netzwerk-Zugriff, versuche localhost...");
+            // Access denied - try without + (localhost only)
+            OnLog?.Invoke("Admin rights missing for network access, trying localhost...");
             try
             {
                 _listener = new HttpListener();
@@ -88,17 +88,17 @@ public class StaticFileServer : IDisposable
                 };
                 _listenerThread.Start();
 
-                OnLog?.Invoke($"HTTP-Server gestartet auf http://localhost:{port} (nur lokal)");
-                OnLog?.Invoke("Für Netzwerk-Zugriff als Administrator starten.");
+                OnLog?.Invoke($"HTTP server started on http://localhost:{port} (local only)");
+                OnLog?.Invoke("Run as administrator for network access.");
             }
             catch (Exception ex2)
             {
-                OnLog?.Invoke($"HTTP-Server konnte nicht gestartet werden: {ex2.Message}");
+                OnLog?.Invoke($"HTTP server could not be started: {ex2.Message}");
             }
         }
         catch (Exception ex)
         {
-            OnLog?.Invoke($"HTTP-Server konnte nicht gestartet werden: {ex.Message}");
+            OnLog?.Invoke($"HTTP server could not be started: {ex.Message}");
         }
     }
 
@@ -113,12 +113,12 @@ public class StaticFileServer : IDisposable
             }
             catch (HttpListenerException)
             {
-                // Server wurde gestoppt
+                // Server was stopped
                 break;
             }
             catch (Exception ex)
             {
-                OnLog?.Invoke($"Request-Fehler: {ex.Message}");
+                OnLog?.Invoke($"Request error: {ex.Message}");
             }
         }
     }
@@ -130,23 +130,23 @@ public class StaticFileServer : IDisposable
 
         try
         {
-            // URL-Pfad ermitteln
+            // Get URL path
             var urlPath = request.Url?.LocalPath ?? "/";
             if (urlPath == "/") urlPath = "/index.html";
 
-            // Sicherheitscheck: Keine Pfad-Traversal erlauben
+            // Security check: No path traversal allowed
             var relativePath = urlPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
             var filePath = Path.GetFullPath(Path.Combine(_wwwRoot, relativePath));
 
             if (!filePath.StartsWith(_wwwRoot))
             {
-                // Versuch, aus dem WWW-Root auszubrechen
+                // Attempt to escape WWW root
                 response.StatusCode = 403;
                 response.Close();
                 return;
             }
 
-            // SPA-Fallback: Wenn Datei nicht existiert, index.html liefern
+            // SPA fallback: If file doesn't exist, serve index.html
             if (!File.Exists(filePath))
             {
                 var indexPath = Path.Combine(_wwwRoot, "index.html");
@@ -166,7 +166,7 @@ public class StaticFileServer : IDisposable
                 }
             }
 
-            // Datei lesen und senden
+            // Read and send file
             var fileBytes = File.ReadAllBytes(filePath);
             var extension = Path.GetExtension(filePath).ToLowerInvariant();
             var mimeType = MimeTypes.GetValueOrDefault(extension, "application/octet-stream");
@@ -174,13 +174,13 @@ public class StaticFileServer : IDisposable
             response.ContentType = mimeType;
             response.ContentLength64 = fileBytes.Length;
 
-            // Cache-Header für Assets
+            // Cache headers for assets
             if (extension is ".js" or ".css" or ".png" or ".jpg" or ".jpeg" or ".gif" or ".svg" or ".woff" or ".woff2")
             {
                 response.Headers.Add("Cache-Control", "public, max-age=31536000, immutable");
             }
 
-            // CORS erlauben (für WebSocket-Verbindung)
+            // Allow CORS (for WebSocket connection)
             response.Headers.Add("Access-Control-Allow-Origin", "*");
 
             response.OutputStream.Write(fileBytes, 0, fileBytes.Length);
@@ -188,7 +188,7 @@ public class StaticFileServer : IDisposable
         }
         catch (Exception ex)
         {
-            OnLog?.Invoke($"Response-Fehler: {ex.Message}");
+            OnLog?.Invoke($"Response error: {ex.Message}");
             try
             {
                 response.StatusCode = 500;
@@ -199,7 +199,7 @@ public class StaticFileServer : IDisposable
     }
 
     /// <summary>
-    /// Stoppt den HTTP-Server
+    /// Stops the HTTP server
     /// </summary>
     public void Stop()
     {
@@ -207,7 +207,7 @@ public class StaticFileServer : IDisposable
         _listener?.Stop();
         _listener?.Close();
         _listenerThread?.Join(1000);
-        OnLog?.Invoke("HTTP-Server gestoppt");
+        OnLog?.Invoke("HTTP server stopped");
     }
 
     public void Dispose()

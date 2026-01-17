@@ -7,7 +7,7 @@ namespace MSFSBridge;
 
 public class UpdateChecker
 {
-    public const string CURRENT_VERSION = "1.6.2";
+    public const string CURRENT_VERSION = "1.7.0";
     private const string GITHUB_REPO = "J4gg3d/simchecklist-bridge";
     private const string GITHUB_API = $"https://api.github.com/repos/{GITHUB_REPO}/releases/latest";
 
@@ -63,7 +63,7 @@ public class UpdateChecker
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[UPDATE] Fehler beim Prüfen auf Updates: {ex.Message}");
+            Console.WriteLine($"[UPDATE] Error checking for updates: {ex.Message}");
             return (false, null);
         }
     }
@@ -88,7 +88,7 @@ public class UpdateChecker
         var zipAsset = release.Assets.FirstOrDefault(a => a.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
         if (zipAsset == null)
         {
-            Console.WriteLine("[UPDATE] Keine ZIP-Datei im Release gefunden.");
+            Console.WriteLine("[UPDATE] No ZIP file found in release.");
             return false;
         }
 
@@ -105,7 +105,7 @@ public class UpdateChecker
             Directory.CreateDirectory(extractPath);
 
             // Download ZIP
-            Console.WriteLine($"[UPDATE] Lade herunter: {zipAsset.Name} ({zipAsset.Size / 1024 / 1024:F1} MB)...");
+            Console.WriteLine($"[UPDATE] Downloading: {zipAsset.Name} ({zipAsset.Size / 1024 / 1024:F1} MB)...");
 
             using (var response = await _httpClient.GetAsync(zipAsset.DownloadUrl, HttpCompletionOption.ResponseHeadersRead))
             {
@@ -130,7 +130,7 @@ public class UpdateChecker
             }
 
             // Extract ZIP
-            Console.WriteLine("[UPDATE] Entpacke Update...");
+            Console.WriteLine("[UPDATE] Extracting update...");
             ZipFile.ExtractToDirectory(zipPath, extractPath, overwriteFiles: true);
 
             // Find the actual files (might be in a subfolder)
@@ -147,7 +147,7 @@ public class UpdateChecker
             var batchContent = $@"@echo off
 echo.
 echo ========================================
-echo   MSFSBridge Update wird installiert...
+echo   Installing MSFSBridge Update...
 echo ========================================
 echo.
 
@@ -155,16 +155,16 @@ echo.
 timeout /t 2 /nobreak > nul
 
 :: Copy new files
-echo Kopiere neue Dateien...
+echo Copying new files...
 xcopy /s /y ""{sourceDir}\*"" ""{currentDir}""
 
 :: Cleanup
-echo Raeume auf...
+echo Cleaning up...
 rmdir /s /q ""{tempDir}""
 
 :: Restart the application
 echo.
-echo Update abgeschlossen! Starte Bridge neu...
+echo Update complete! Restarting Bridge...
 echo.
 timeout /t 2 /nobreak > nul
 
@@ -179,7 +179,7 @@ exit
 ";
             await File.WriteAllTextAsync(batchPath, batchContent);
 
-            Console.WriteLine("[UPDATE] Update bereit. Die Bridge wird jetzt neu gestartet...");
+            Console.WriteLine("[UPDATE] Update ready. The Bridge will now restart...");
             Console.WriteLine();
 
             // Start the update script and exit
@@ -196,7 +196,7 @@ exit
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[UPDATE] Fehler beim Update: {ex.Message}");
+            Console.WriteLine($"[UPDATE] Error during update: {ex.Message}");
             return false;
         }
     }
@@ -208,22 +208,22 @@ exit
 
         if (!updateAvailable || release == null)
         {
-            Console.WriteLine($"[UPDATE] Version {CURRENT_VERSION} ist aktuell.");
+            Console.WriteLine($"[UPDATE] Version {CURRENT_VERSION} is up to date.");
             Console.WriteLine();
             return;
         }
 
         Console.WriteLine();
         Console.WriteLine("╔══════════════════════════════════════════════════════════════╗");
-        Console.WriteLine("║                    UPDATE VERFÜGBAR!                         ║");
+        Console.WriteLine("║                    UPDATE AVAILABLE!                         ║");
         Console.WriteLine("╚══════════════════════════════════════════════════════════════╝");
-        Console.WriteLine($"  Aktuelle Version: {CURRENT_VERSION}");
-        Console.WriteLine($"  Neue Version:     {release.TagName}");
+        Console.WriteLine($"  Current version: {CURRENT_VERSION}");
+        Console.WriteLine($"  New version:     {release.TagName}");
         Console.WriteLine();
 
         if (!string.IsNullOrWhiteSpace(release.Body))
         {
-            Console.WriteLine("  Änderungen:");
+            Console.WriteLine("  Changes:");
             foreach (var line in release.Body.Split('\n').Take(5))
             {
                 var trimmed = line.Trim();
@@ -233,11 +233,11 @@ exit
             Console.WriteLine();
         }
 
-        Console.WriteLine("  [J] Jetzt aktualisieren");
-        Console.WriteLine("  [N] Später (Bridge normal starten)");
-        Console.WriteLine("  [I] Im Browser öffnen");
+        Console.WriteLine("  [Y] Update now");
+        Console.WriteLine("  [N] Later (start Bridge normally)");
+        Console.WriteLine("  [O] Open in browser");
         Console.WriteLine();
-        Console.Write("  Deine Wahl: ");
+        Console.Write("  Your choice: ");
 
         var key = Console.ReadKey();
         Console.WriteLine();
@@ -245,7 +245,7 @@ exit
 
         switch (char.ToUpper(key.KeyChar))
         {
-            case 'J':
+            case 'Y':
                 var success = await checker.DownloadAndInstallUpdateAsync(release);
                 if (success)
                 {
@@ -253,7 +253,7 @@ exit
                 }
                 break;
 
-            case 'I':
+            case 'O':
                 try
                 {
                     Process.Start(new ProcessStartInfo
@@ -263,12 +263,12 @@ exit
                     });
                 }
                 catch { }
-                Console.WriteLine("[UPDATE] Release-Seite im Browser geöffnet.");
+                Console.WriteLine("[UPDATE] Release page opened in browser.");
                 Console.WriteLine();
                 break;
 
             default:
-                Console.WriteLine("[UPDATE] Update übersprungen. Starte Bridge...");
+                Console.WriteLine("[UPDATE] Update skipped. Starting Bridge...");
                 Console.WriteLine();
                 break;
         }
