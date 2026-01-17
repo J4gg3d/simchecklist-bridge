@@ -39,7 +39,7 @@ Die Bridge läuft **lokal auf deinem PC** und:
 │  (Simulator)    │                    │  (Diese App)    │
 └─────────────────┘                    └────────┬────────┘
                                                 │
-                                                │ WebSocket (Port 8500)
+                                                │ WebSocket (Port 8580)
                                                 │
                                                 ▼
                                        ┌─────────────────┐
@@ -82,8 +82,8 @@ HTTP_PORT=8091
 ### Port-Konfiguration
 
 Die Standard-Ports sind:
-- **WebSocket**: 8500
-- **HTTP** (für Tablets): 8501
+- **WebSocket**: 8580
+- **HTTP** (für Tablets): 8581
 
 Diese Ports wurden gewählt um Konflikte mit Windows/Hyper-V Port-Reservierungen zu vermeiden. Falls du dennoch Probleme hast, setze einen benutzerdefinierten Port in `.env` und konfiguriere den gleichen Port in den Website-Einstellungen.
 
@@ -96,7 +96,7 @@ Diese Ports wurden gewählt um Konflikte mit Windows/Hyper-V Port-Reservierungen
 
 ### Option B: Lokales Netzwerk (für Tablets)
 1. Starte die Bridge auf deinem PC
-2. Notiere die URL aus der Konsole (z.B. `http://192.168.1.100:8501`)
+2. Notiere die URL aus der Konsole (z.B. `http://192.168.1.100:8581`)
 3. Öffne diese URL auf deinem Tablet
 4. PC und Tablet müssen im gleichen WLAN sein
 
@@ -163,13 +163,13 @@ SimConnect DLLs sind im `libs/` Ordner enthalten.
 3. Prüfe ob .NET 8 Runtime installiert ist
 
 ### "Port bereits in Verwendung"
-Eine andere Anwendung nutzt Port 8500. Entweder:
+Eine andere Anwendung nutzt Port 8580. Entweder:
 - Schließe die andere Anwendung
 - Setze einen benutzerdefinierten Port in `.env`
 
 ### Website zeigt "Nicht verbunden"
 1. Stelle sicher, dass die Bridge läuft
-2. Prüfe ob Port 8500 in der Firewall erlaubt ist
+2. Prüfe ob Port 8580 in der Firewall erlaubt ist
 3. Bei benutzerdefiniertem Port: Stelle sicher, dass er in den Website-Einstellungen übereinstimmt
 
 ## Datenschutz
