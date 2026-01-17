@@ -39,7 +39,7 @@ The Bridge runs **locally on your PC** and:
 │  (Simulator)    │                    │  (This App)     │
 └─────────────────┘                    └────────┬────────┘
                                                 │
-                                                │ WebSocket (Port 8080)
+                                                │ WebSocket (Port 8500)
                                                 │
                                                 ▼
                                        ┌─────────────────┐
@@ -82,10 +82,10 @@ HTTP_PORT=8091
 ### Port Configuration
 
 The default ports are:
-- **WebSocket**: 8080
-- **HTTP** (for tablets): 8081
+- **WebSocket**: 8500
+- **HTTP** (for tablets): 8501
 
-If port 8080 is blocked (common with Hyper-V or Docker), set a custom port in `.env` and configure the same port in the website settings.
+These ports were chosen to avoid conflicts with Windows/Hyper-V port reservations. If you still have issues, set a custom port in `.env` and configure the same port in the website settings.
 
 ## Tablet Access
 
@@ -96,7 +96,7 @@ If port 8080 is blocked (common with Hyper-V or Docker), set a custom port in `.
 
 ### Option B: Local Network (for tablets)
 1. Run the Bridge on your PC
-2. Note the URL shown in the console (e.g., `http://192.168.1.100:8081`)
+2. Note the URL shown in the console (e.g., `http://192.168.1.100:8501`)
 3. Open this URL on your tablet
 4. PC and tablet must be on the same WiFi network
 
@@ -163,13 +163,13 @@ SimConnect DLLs are included in the `libs/` folder.
 3. Check if .NET 8 Runtime is installed
 
 ### "Port already in use"
-Another application is using port 8080. Either:
+Another application is using port 8500. Either:
 - Close the other application
 - Set a custom port in `.env`
 
 ### Website shows "Not connected"
 1. Make sure the Bridge is running
-2. Check if port 8080 is allowed in the firewall
+2. Check if port 8500 is allowed in the firewall
 3. If using a custom port, make sure it matches in website settings
 
 ## Privacy

@@ -58,8 +58,8 @@ await MSFSBridge.UpdateChecker.CheckAndPromptForUpdateAsync();
 var wsPortStr = Environment.GetEnvironmentVariable("WEBSOCKET_PORT");
 var httpPortStr = Environment.GetEnvironmentVariable("HTTP_PORT");
 
-int WEBSOCKET_PORT = 8080;
-int HTTP_PORT = 8081;
+int WEBSOCKET_PORT = 8500;
+int HTTP_PORT = 8501;
 
 if (int.TryParse(wsPortStr, out var customWsPort))
 {
