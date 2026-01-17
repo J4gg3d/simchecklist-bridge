@@ -1,5 +1,6 @@
-$source = "D:\DEV MSFS Checklist\bridge-server\MSFSBridge\bin\Release\net8.0"
-$dest = "D:\MSFSBridge\MSFSBridge-v1.6.0.zip"
+$version = "1.6.1"
+$source = "D:\MSFSBridge\bin\Release\net8.0\win-x64\publish"
+$dest = "D:\MSFSBridge\MSFSBridge-v$version.zip"
 
 # Remove old zip
 if (Test-Path $dest) { Remove-Item $dest }
