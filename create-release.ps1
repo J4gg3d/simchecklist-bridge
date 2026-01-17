@@ -1,4 +1,4 @@
-$version = "1.6.1"
+$version = "1.6.2"
 $source = "D:\MSFSBridge\bin\Release\net8.0\win-x64\publish"
 $dest = "D:\MSFSBridge\MSFSBridge-v$version.zip"
 

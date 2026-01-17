@@ -54,8 +54,23 @@ Console.WriteLine();
 // Check for updates
 await MSFSBridge.UpdateChecker.CheckAndPromptForUpdateAsync();
 
-const int WEBSOCKET_PORT = 8080;
-const int HTTP_PORT = 8081;
+// Ports aus .env laden (mit Fallback auf Standard-Ports)
+var wsPortStr = Environment.GetEnvironmentVariable("WEBSOCKET_PORT");
+var httpPortStr = Environment.GetEnvironmentVariable("HTTP_PORT");
+
+int WEBSOCKET_PORT = 8080;
+int HTTP_PORT = 8081;
+
+if (int.TryParse(wsPortStr, out var customWsPort))
+{
+    WEBSOCKET_PORT = customWsPort;
+    Console.WriteLine($"[CONFIG] WebSocket-Port aus .env: {WEBSOCKET_PORT}");
+}
+if (int.TryParse(httpPortStr, out var customHttpPort))
+{
+    HTTP_PORT = customHttpPort;
+    Console.WriteLine($"[CONFIG] HTTP-Port aus .env: {HTTP_PORT}");
+}
 
 // WWW-Ordner für statische Dateien (Website)
 var wwwRoot = Path.Combine(AppContext.BaseDirectory, "www");
