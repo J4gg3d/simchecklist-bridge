@@ -7,7 +7,7 @@ using System.Net.Http;
 namespace MSFSBridge;
 
 /// <summary>
-/// WebSocket-Server der Sim-Daten an verbundene Clients sendet
+/// WebSocket server that sends sim data to connected clients
 /// </summary>
 public class BridgeWebSocketServer : IDisposable
 {
@@ -16,10 +16,10 @@ public class BridgeWebSocketServer : IDisposable
     private readonly object _lock = new();
     private bool _disposed = false;
 
-    // Gespeicherte Route für Synchronisation zwischen Clients
+    // Stored route for synchronization between clients
     private RouteData? _currentRoute = null;
 
-    // Airport-Koordinaten Cache und HTTP-Client für API
+    // Airport coordinates cache and HTTP client for API
     private readonly Dictionary<string, AirportCoords> _airportCache = new();
     private readonly HttpClient _httpClient = new();
 
@@ -35,7 +35,7 @@ public class BridgeWebSocketServer : IDisposable
     public event Action<string?, string?>? OnRouteReceived;
 
     /// <summary>
-    /// Aktuelle Route (Origin, Destination) - für FlightTracker
+    /// Current route (Origin, Destination) - for FlightTracker
     /// </summary>
     public (string? Origin, string? Destination) CurrentRoute =>
         (_currentRoute?.Origin, _currentRoute?.Destination);
@@ -52,13 +52,26 @@ public class BridgeWebSocketServer : IDisposable
     }
 
     /// <summary>
-    /// Startet den WebSocket-Server
+    /// Starts the WebSocket server
     /// </summary>
     public void Start(int port = 8080)
     {
+        // Try binding to all interfaces first, fall back to localhost if permission denied
+        if (!TryStartServer($"ws://0.0.0.0:{port}", port, false))
+        {
+            OnLog?.Invoke("Admin rights missing for network access, trying localhost...");
+            if (!TryStartServer($"ws://127.0.0.1:{port}", port, true))
+            {
+                throw new Exception($"Could not start WebSocket server on port {port}");
+            }
+        }
+    }
+
+    private bool TryStartServer(string url, int port, bool isLocalOnly)
+    {
         try
         {
-            _server = new WebSocketServer($"ws://0.0.0.0:{port}");
+            _server = new WebSocketServer(url);
 
             _server.Start(socket =>
             {
@@ -68,17 +81,17 @@ public class BridgeWebSocketServer : IDisposable
                     {
                         _clients.Add(socket);
                     }
-                    OnLog?.Invoke($"Client verbunden: {socket.ConnectionInfo.ClientIpAddress} (Gesamt: {ClientCount})");
+                    OnLog?.Invoke($"Client connected: {socket.ConnectionInfo.ClientIpAddress} (Total: {ClientCount})");
                     OnClientConnected?.Invoke(socket);
 
-                    // Aktuelle Route an neuen Client senden
+                    // Send current route to new client
                     if (_currentRoute != null)
                     {
                         try
                         {
                             var routeMessage = JsonConvert.SerializeObject(new { type = "route", route = _currentRoute }, _jsonSettings);
                             socket.Send(routeMessage);
-                            OnLog?.Invoke($"Route an neuen Client gesendet: {_currentRoute.Origin} → {_currentRoute.Destination}");
+                            OnLog?.Invoke($"Route sent to new client: {_currentRoute.Origin} -> {_currentRoute.Destination}");
                         }
                         catch { }
                     }
@@ -90,12 +103,12 @@ public class BridgeWebSocketServer : IDisposable
                     {
                         _clients.Remove(socket);
                     }
-                    OnLog?.Invoke($"Client getrennt: {socket.ConnectionInfo.ClientIpAddress} (Gesamt: {ClientCount})");
+                    OnLog?.Invoke($"Client disconnected: {socket.ConnectionInfo.ClientIpAddress} (Total: {ClientCount})");
                 };
 
                 socket.OnError = (ex) =>
                 {
-                    OnLog?.Invoke($"WebSocket-Fehler: {ex.Message}");
+                    OnLog?.Invoke($"WebSocket error: {ex.Message}");
                     lock (_lock)
                     {
                         _clients.Remove(socket);
@@ -104,31 +117,41 @@ public class BridgeWebSocketServer : IDisposable
 
                 socket.OnMessage = (message) =>
                 {
-                    // Für zukünftige Befehle von der Webseite
-                    // Auth-Nachrichten nicht vollständig loggen (enthält Token)
+                    // Don't log auth messages fully (contains token)
                     if (message.Contains("\"type\":\"auth\""))
                     {
-                        OnLog?.Invoke("Nachricht empfangen: [auth - Token ausgeblendet]");
+                        OnLog?.Invoke("Message received: [auth - token hidden]");
                     }
                     else
                     {
-                        OnLog?.Invoke($"Nachricht empfangen: {message}");
+                        OnLog?.Invoke($"Message received: {message}");
                     }
                     HandleClientMessage(socket, message);
                 };
             });
 
-            OnLog?.Invoke($"WebSocket-Server gestartet auf Port {port}");
+            if (isLocalOnly)
+            {
+                OnLog?.Invoke($"WebSocket server started on port {port} (localhost only)");
+                OnLog?.Invoke("Run as administrator for network access.");
+            }
+            else
+            {
+                OnLog?.Invoke($"WebSocket server started on port {port}");
+            }
+            return true;
         }
         catch (Exception ex)
         {
-            OnLog?.Invoke($"Server-Startfehler: {ex.Message}");
-            throw;
+            OnLog?.Invoke($"Server start error: {ex.Message}");
+            _server?.Dispose();
+            _server = null;
+            return false;
         }
     }
 
     /// <summary>
-    /// Stoppt den WebSocket-Server
+    /// Stops the WebSocket server
     /// </summary>
     public void Stop()
     {
@@ -148,11 +171,11 @@ public class BridgeWebSocketServer : IDisposable
         _server?.Dispose();
         _server = null;
 
-        OnLog?.Invoke("WebSocket-Server gestoppt");
+        OnLog?.Invoke("WebSocket server stopped");
     }
 
     /// <summary>
-    /// Sendet Sim-Daten an alle verbundenen Clients
+    /// Sends sim data to all connected clients
     /// </summary>
     public void BroadcastSimData(SimData data)
     {
@@ -161,7 +184,7 @@ public class BridgeWebSocketServer : IDisposable
     }
 
     /// <summary>
-    /// Sendet Landing-Info an alle verbundenen Clients
+    /// Sends landing info to all connected clients
     /// </summary>
     public void BroadcastLanding(LandingInfo landing)
     {
@@ -175,7 +198,7 @@ public class BridgeWebSocketServer : IDisposable
     }
 
     /// <summary>
-    /// Sendet Sim-Daten an einen einzelnen Client
+    /// Sends sim data to a single client
     /// </summary>
     public void SendToClient(IWebSocketConnection client, SimData data)
     {
@@ -189,12 +212,12 @@ public class BridgeWebSocketServer : IDisposable
         }
         catch (Exception ex)
         {
-            OnLog?.Invoke($"Send-Fehler: {ex.Message}");
+            OnLog?.Invoke($"Send error: {ex.Message}");
         }
     }
 
     /// <summary>
-    /// Sendet eine Nachricht an alle verbundenen Clients
+    /// Sends a message to all connected clients
     /// </summary>
     private void Broadcast(string message)
     {
@@ -216,13 +239,13 @@ public class BridgeWebSocketServer : IDisposable
             }
             catch (Exception ex)
             {
-                OnLog?.Invoke($"Broadcast-Fehler: {ex.Message}");
+                OnLog?.Invoke($"Broadcast error: {ex.Message}");
             }
         }
     }
 
     /// <summary>
-    /// Verarbeitet Nachrichten vom Client
+    /// Processes messages from the client
     /// </summary>
     private void HandleClientMessage(IWebSocketConnection socket, string message)
     {
@@ -253,12 +276,12 @@ public class BridgeWebSocketServer : IDisposable
         }
         catch
         {
-            // Ungültige Nachricht ignorieren
+            // Ignore invalid messages
         }
     }
 
     /// <summary>
-    /// Verarbeitet Auth-Nachrichten vom Frontend (User-ID + Token für Flight-Logging)
+    /// Processes auth messages from frontend (user ID + token for flight logging)
     /// </summary>
     private void HandleAuthMessage(ClientCommand command)
     {
@@ -266,7 +289,7 @@ public class BridgeWebSocketServer : IDisposable
         {
             var userId = command.Data?.ToString();
             var token = command.Token;
-            OnLog?.Invoke($"Auth empfangen: User-ID = {(string.IsNullOrEmpty(userId) ? "(abgemeldet)" : userId)}");
+            OnLog?.Invoke($"Auth received: User ID = {(string.IsNullOrEmpty(userId) ? "(logged out)" : userId)}");
             OnUserAuthenticated?.Invoke(
                 string.IsNullOrEmpty(userId) ? null : userId,
                 string.IsNullOrEmpty(token) ? null : token
@@ -274,42 +297,42 @@ public class BridgeWebSocketServer : IDisposable
         }
         catch (Exception ex)
         {
-            OnLog?.Invoke($"Auth-Fehler: {ex.Message}");
+            OnLog?.Invoke($"Auth error: {ex.Message}");
         }
     }
 
     /// <summary>
-    /// Verarbeitet Route-Nachrichten und synchronisiert zwischen Clients
+    /// Processes route messages and synchronizes between clients
     /// </summary>
     private void HandleRouteMessage(IWebSocketConnection sender, ClientCommand command)
     {
         try
         {
-            // Route-Daten aus dem Command extrahieren
+            // Extract route data from command
             var routeJson = JsonConvert.SerializeObject(command.Data);
             var route = JsonConvert.DeserializeObject<RouteData>(routeJson);
 
             if (route != null)
             {
                 _currentRoute = route;
-                OnLog?.Invoke($"Route empfangen: {route.Origin} → {route.Destination}");
+                OnLog?.Invoke($"Route received: {route.Origin} -> {route.Destination}");
 
-                // Event für FlightTracker auslösen
+                // Trigger event for FlightTracker
                 OnRouteReceived?.Invoke(route.Origin, route.Destination);
 
-                // Route an alle Clients broadcasten (inkl. Sender für Bestätigung)
+                // Broadcast route to all clients (including sender for confirmation)
                 var routeMessage = JsonConvert.SerializeObject(new { type = "route", route = route }, _jsonSettings);
                 Broadcast(routeMessage);
             }
         }
         catch (Exception ex)
         {
-            OnLog?.Invoke($"Route-Fehler: {ex.Message}");
+            OnLog?.Invoke($"Route error: {ex.Message}");
         }
     }
 
     /// <summary>
-    /// Verarbeitet Airport-Anfragen und holt Koordinaten von der API
+    /// Processes airport requests and fetches coordinates from API
     /// </summary>
     private async Task HandleAirportRequest(IWebSocketConnection socket, ClientCommand command)
     {
@@ -321,7 +344,7 @@ public class BridgeWebSocketServer : IDisposable
                 return;
             }
 
-            // Aus Cache holen wenn vorhanden
+            // Get from cache if available
             if (_airportCache.TryGetValue(icao, out var cached))
             {
                 var cacheResponse = JsonConvert.SerializeObject(new
@@ -334,14 +357,14 @@ public class BridgeWebSocketServer : IDisposable
                 return;
             }
 
-            // Von API laden
-            OnLog?.Invoke($"Lade Flughafen von API: {icao}");
+            // Load from API
+            OnLog?.Invoke($"Loading airport from API: {icao}");
             var url = $"https://airport-data.com/api/ap_info.json?icao={icao}";
 
             var response = await _httpClient.GetAsync(url);
             if (!response.IsSuccessStatusCode)
             {
-                OnLog?.Invoke($"Airport API Fehler für {icao}: {response.StatusCode}");
+                OnLog?.Invoke($"Airport API error for {icao}: {response.StatusCode}");
                 await socket.Send(JsonConvert.SerializeObject(new
                 {
                     type = "airportCoords",
@@ -365,11 +388,11 @@ public class BridgeWebSocketServer : IDisposable
                 };
 #pragma warning restore CS8602
 
-                // Im Cache speichern
+                // Save in cache
                 _airportCache[icao] = coords;
-                OnLog?.Invoke($"Flughafen geladen: {icao} ({coords.Lat:F4}, {coords.Lon:F4})");
+                OnLog?.Invoke($"Airport loaded: {icao} ({coords.Lat:F4}, {coords.Lon:F4})");
 
-                // An Client senden
+                // Send to client
                 var successResponse = JsonConvert.SerializeObject(new
                 {
                     type = "airportCoords",
@@ -380,7 +403,7 @@ public class BridgeWebSocketServer : IDisposable
             }
             else
             {
-                OnLog?.Invoke($"Flughafen nicht gefunden: {icao}");
+                OnLog?.Invoke($"Airport not found: {icao}");
                 await socket.Send(JsonConvert.SerializeObject(new
                 {
                     type = "airportCoords",
@@ -392,7 +415,7 @@ public class BridgeWebSocketServer : IDisposable
         }
         catch (Exception ex)
         {
-            OnLog?.Invoke($"Airport-API Fehler: {ex.Message}");
+            OnLog?.Invoke($"Airport API error: {ex.Message}");
         }
     }
 
@@ -408,7 +431,7 @@ public class BridgeWebSocketServer : IDisposable
 }
 
 /// <summary>
-/// Datenmodell für Client-Befehle
+/// Data model for client commands
 /// </summary>
 public class ClientCommand
 {
@@ -423,7 +446,7 @@ public class ClientCommand
 }
 
 /// <summary>
-/// Datenmodell für Flugrouten
+/// Data model for flight routes
 /// </summary>
 public class RouteData
 {
@@ -435,7 +458,7 @@ public class RouteData
 }
 
 /// <summary>
-/// Datenmodell für Flughafen-Koordinaten
+/// Data model for airport coordinates
 /// </summary>
 public class AirportCoords
 {
