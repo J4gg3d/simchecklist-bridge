@@ -30,6 +30,10 @@ public class FlightTracker
 
     public bool IsTracking => _isTracking;
     public double TotalDistanceNm => _totalDistanceNm;
+    public string? OriginAirport => _originAirport;
+    public string? DestinationAirport => _destinationAirport;
+    public DateTime TakeoffTime => _takeoffTime;
+    public int FlightDurationSeconds => _isTracking ? (int)(DateTime.UtcNow - _takeoffTime).TotalSeconds : 0;
 
     /// <summary>
     /// Setzt User-ID für eingeloggte Benutzer

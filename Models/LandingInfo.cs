@@ -34,6 +34,12 @@ public class LandingInfo
     // Approach-Daten für Gleitpfad-Visualisierung (letzte 60 Sekunden vor Touchdown)
     public List<ApproachDataPoint>? ApproachData { get; set; }
 
+    // Flight Summary (für Rank-Progress nach Landing)
+    public string? Origin { get; set; }           // ICAO Startflughafen
+    public string? Destination { get; set; }      // ICAO Zielflughafen
+    public int FlightDurationSeconds { get; set; } // Flugdauer in Sekunden
+    public double DistanceNm { get; set; }        // Geflogene Distanz in NM
+
     /// <summary>
     /// Berechnet das Rating basierend auf der Vertical Speed
     /// </summary>

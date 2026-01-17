@@ -741,7 +741,13 @@ public class SimConnectManager : IDisposable
 
                             // G-Kräfte für Vektoren
                             LateralG = Math.Round(_lastAccelX, 2),
-                            LongitudinalG = Math.Round(_lastAccelZ, 2)
+                            LongitudinalG = Math.Round(_lastAccelZ, 2),
+
+                            // Flight Summary (für Rank-Progress)
+                            Origin = _flightTracker.OriginAirport,
+                            Destination = landingAirport,
+                            FlightDurationSeconds = _flightTracker.FlightDurationSeconds,
+                            DistanceNm = Math.Round(_flightTracker.TotalDistanceNm, 1)
                         };
 
                         // Approach-Daten verarbeiten (Gleitpfad-Visualisierung)
