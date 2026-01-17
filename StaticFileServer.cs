@@ -48,8 +48,8 @@ public class StaticFileServer : IDisposable
     {
         if (!Directory.Exists(_wwwRoot))
         {
-            OnLog?.Invoke($"WWW-Ordner nicht gefunden: {_wwwRoot}");
-            OnLog?.Invoke("Erstelle 'www' Ordner und kopiere die Website-Dateien hinein.");
+            OnLog?.Invoke($"Kein www-Ordner gefunden - HTTP-Server für Tablets deaktiviert");
+            OnLog?.Invoke("(Nutze https://simchecklist.app im Browser stattdessen)");
             return;
         }
 

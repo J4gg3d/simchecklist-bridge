@@ -7,7 +7,7 @@ namespace MSFSBridge;
 
 public class UpdateChecker
 {
-    public const string CURRENT_VERSION = "1.6.0";
+    public const string CURRENT_VERSION = "1.6.1";
     private const string GITHUB_REPO = "J4gg3d/simchecklist-bridge";
     private const string GITHUB_API = $"https://api.github.com/repos/{GITHUB_REPO}/releases/latest";
 
