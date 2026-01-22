@@ -190,7 +190,7 @@ supabaseClient.OnError += (error) => Console.WriteLine($"[FLIGHT-LOG ERROR] {err
 
 if (supabaseClient.IsConfigured)
 {
-    Console.WriteLine("[FLIGHT-LOG] Supabase configured - flights will be saved");
+    Console.WriteLine("[FLIGHT-LOG] Supabase configured (test flights only - normal flights saved by Frontend)");
 }
 
 // Set session code for flight logging (for anonymous flights)
@@ -220,16 +220,11 @@ simConnect.OnError += (error) => Console.WriteLine($"[SIM ERROR] {error}");
 simConnect.OnLandingDetected += (landing) =>
 {
     // Broadcast landing to all clients
+    // Frontend will save the flight to database (handles token refresh)
     webSocketServer.BroadcastLanding(landing);
 };
-simConnect.OnFlightCompleted += async (flight) =>
-{
-    // Save flight to Supabase
-    if (supabaseClient.IsConfigured)
-    {
-        await supabaseClient.SaveFlightAsync(flight);
-    }
-};
+// Note: Flight saving moved to Frontend (handles token refresh properly)
+// The Frontend saves the flight when it receives the landing via WebSocket
 simConnect.OnDataReceived += async (data) =>
 {
     // Add session code if active
