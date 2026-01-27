@@ -34,6 +34,7 @@
   <ItemGroup Condition="Exists('libs\SimConnect.dll')">
     <None Include="libs\SimConnect.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>SimConnect.dll</Link>
     </None>
   </ItemGroup>
 
